@@ -21,10 +21,13 @@ namespace trifle
 		bool reset(const unsigned int pos);
 		bool test(const unsigned int pos);
 
+		void setAll();
+		void resetAll();
+
 		void setLength(const unsigned int newLength);
 		const unsigned int getLength() const;
 		const unsigned int getSize() const;
-		char getBlock(const unsigned int index) const;
+		BlockType getBlock(const unsigned int index) const;
 
 		template<typename NumberType>
 		bool setNumber(const NumberType& num, const unsigned int pos);
@@ -59,7 +62,7 @@ namespace trifle
 	DynamicBitset<BlockType>::DynamicBitset()
 		:
 		_bitsInBlockType(sizeof(BlockType) * BITS_IN_BYTE),
-		_powOf_2(log(_bitsInBlockType) / log(2)),
+		_powOf_2( static_cast<unsigned char>(log(_bitsInBlockType) / log(2)) ),
 		_length(0),
 		_arraySize(0),
 		_array(nullptr)
@@ -70,7 +73,7 @@ namespace trifle
 	DynamicBitset<BlockType>::DynamicBitset(const unsigned int length)
 		:
 		_bitsInBlockType(sizeof(BlockType) * BITS_IN_BYTE),
-		_powOf_2(char(log(_bitsInBlockType) / log(2))),
+		_powOf_2( static_cast<unsigned char>(log(_bitsInBlockType) / log(2)) ),
 		_array(nullptr)
 	{
 		init(length);
@@ -80,7 +83,7 @@ namespace trifle
 	DynamicBitset<BlockType>::DynamicBitset(const DynamicBitset& obj)
 		:
 		_bitsInBlockType(sizeof(BlockType) * BITS_IN_BYTE),
-		_powOf_2(log(_bitsInBlockType) / log(2))
+		_powOf_2( static_cast<unsigned char>(log(_bitsInBlockType) / log(2)))
 	{
 		if (nullptr != obj._array)
 		{
@@ -124,6 +127,20 @@ namespace trifle
 		const int cellNumber = pos >> _powOf_2;
 		resetBit(_array[cellNumber], char(pos - (cellNumber << _powOf_2)));
 		return true;
+	}
+
+	template<typename BlockType>
+	void DynamicBitset<BlockType>::setAll()
+	{
+		BlockType a = 0;
+		a = ~a;
+		::memset(_array, a, sizeof(BlockType) * _arraySize);
+	}
+
+	template<typename BlockType>
+	void DynamicBitset<BlockType>::resetAll()
+	{
+		::memset(_array, 0, sizeof(BlockType) * _arraySize);
 	}
 
 	template<typename BlockType>
@@ -180,14 +197,16 @@ namespace trifle
 	template<typename BlockType>
 	const unsigned int DynamicBitset<BlockType>::getSize() const
 	{
-		return _arraySize * sizeof(BlockType);
+		return _arraySize;//* sizeof(BlockType);
 	}
 
 	template<typename BlockType>
-	char DynamicBitset<BlockType>::getBlock(const unsigned int index) const
+	BlockType DynamicBitset<BlockType>::getBlock(const unsigned int index) const
 	{
 		if (index < _arraySize)
 			return _array[index];
+		else
+			return 0;
 	}
 
 	template<typename BlockType>
@@ -195,7 +214,7 @@ namespace trifle
 	bool DynamicBitset<BlockType>::setNumber(const NumberType& num, const unsigned int pos)
 	{
 		const unsigned char numLen = sizeof(num) * BITS_IN_BYTE;
-		if (_length - pos < numLen)
+		if (pos >= _length || _length - pos < numLen)
 			return false;
 
 		std::bitset<numLen> numBitset(num);
@@ -264,19 +283,19 @@ namespace trifle
 	template<typename BlockType>
 	void DynamicBitset<BlockType>::setBit(BlockType& first, const unsigned char pos)
 	{
-		first |= 1 << (_bitsInBlockType - 1) - pos;
+		first |= 1 << ((_bitsInBlockType - 1) - pos);
 	}
 
 	template<typename BlockType>
 	void DynamicBitset<BlockType>::resetBit(BlockType& first, const unsigned char pos)
 	{
-		first &= ~(1 << (_bitsInBlockType - 1) - pos);
+		first &= ~(1 << ((_bitsInBlockType - 1) - pos) );
 	}
 
 	template<typename BlockType>
 	bool DynamicBitset<BlockType>::testBit(BlockType& first, const unsigned char pos) const
 	{
-		return (first & (1 << (_bitsInBlockType - 1) - pos));// ? true : false;
+		return 0 != (first & (1 << ((_bitsInBlockType - 1) - pos) ));// ? true : false;
 	}
 
 	template<typename BlockType>
